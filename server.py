@@ -36,8 +36,20 @@ def index():
 def show_users():
     """Show list of users"""
 
-    users = User.query.all()
+    users = User.query.order_by(User.email).all()
     return render_template('user_list.html', users=users)
+
+
+@app.route('/users/<user_id>')
+def load_user_info(user_id):
+    """Load info about a specific user"""
+
+    user = User.query.filter(User.user_id == user_id).first()
+    if user:
+        return render_template('/user-info.html', user=user)
+    else:
+        flash('No user exists with that ID')
+        return redirect('/users')
 
 
 @app.route('/movies')
@@ -54,12 +66,58 @@ def show_movies():
 def show_movie_info(movie_id):
     """Gets info and ratings for a specific movie"""
 
+    #get the movie obj from the db
     movie = Movie.query.filter(Movie.movie_id == movie_id).first()
-    #ratings = movie.ratings
 
-    #movie_url = "movies/" + str(movie_id)
+    #if movie exists go to that info page
+    if movie:
+        return render_template('movie-info.html', movie=movie)
+    else:
+        flash('No movie exists with that ID')
+        return redirect('/movies')
 
-    return render_template('movie-info.html', movie=movie)
+
+@app.route('/add-rating', methods=["POST"])
+def add_or_update_rating():
+    """Adds or updates a rating for the logged in user"""
+
+    #pull data from form
+    user_email = session['user_email']
+    movie_id = request.form.get('movie_id')
+    score = request.form.get('score')
+
+    #get the user id using the logged in users email
+    user = User.query.filter(User.email == user_email).first()
+
+    #check if that user has a rating for this movie already
+    existing_rating = Rating.query.filter(Rating.movie_id == movie_id,
+                                        Rating.user_id == user.user_id).first()
+
+    if existing_rating:
+        #don't create a new rating, just update the score attribute
+        existing_rating.score = score
+
+        #save that change to the db
+        db.session.commit()
+
+        flash("Your rating has been updated!")
+
+    else:
+        # create a new rating for that movie for that user
+        # prep a rating to be added to the db
+        user_rating = Rating(movie_id=movie_id, user_id=user.user_id, score=score)
+
+        #prime rating to be added to db
+        db.session.add(user_rating)
+
+        #commit to db
+        db.session.commit()
+
+        flash("Your new rating has been added!")
+
+    movie_url = '/movies/' + str(movie_id)
+
+    return redirect(movie_url)
 
 
 @app.route('/register', methods=["GET"])
@@ -148,21 +206,6 @@ def handle_login():
     else:
         flash("No user is registered with that email. Please register.")
         return redirect('/register')
-
-
-
-@app.route('/users/<user_id>')
-def load_user_info(user_id):
-    """Load info about a specific user"""
-
-    user = User.query.filter(User.user_id == user_id).first()
-    if user:
-        user_age = user.age
-        user_zip = user.zipcode
-        user_movies = user.ratings
-        return render_template('/user-info.html', user=user)
-    else:
-        return "No user exists with that ID. <a href='/users'>Go back to users list</a>"
 
 
 

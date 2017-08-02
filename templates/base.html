@@ -18,10 +18,12 @@
 </head>
 
 <body>
-  Ratings<br/>
+  Ratings
   {% if 'user_email' in session %}
+    - Logged in as: {{ session['user_email'] }}
     <button id='login-btn'>Log Out</button>
   {% else %}
+    <br/>
     <button id='login-btn'>Log In</button>
   {% endif %}
   <br/>
