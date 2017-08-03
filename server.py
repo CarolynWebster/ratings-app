@@ -66,8 +66,22 @@ def show_movies():
 def show_movie_info(movie_id):
     """Gets info and ratings for a specific movie"""
 
-    #get the movie obj from the db
-    movie = Movie.query.filter(Movie.movie_id == movie_id).first()
+    # get the movie obj from the db
+    # can use get since we know the movie_id - faster than filtering
+    movie = Movie.query.get(movie_id)
+
+    # use user email to get user id
+    # future note - refactor session to store user id instead of email!
+    user_email = session.get('user_email')
+    user = User.query.filter_by(email = user_email).first()
+    user_id = user.user_id
+
+    if user_id:
+        user_rating = Rating.query.filter_by(
+            movie_id=movie_id, user_id=user_id).first()
+
+    else:
+        user_rating = None
 
     str_date = movie.released_at.strftime('%B %e, %Y')
 

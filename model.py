@@ -25,7 +25,7 @@ class User(db.Model):
     zipcode = db.Column(db.String(15), nullable=True)
 
 
-    def find_common_movies(self, other_user):
+    def similarity(self, other_user):
         """Finds common movies this user and another user"""
 
         # make a dict to hold the users ratings
@@ -55,6 +55,41 @@ class User(db.Model):
         else:
             return 0.0
 
+
+    def predict_rating(self, movie):
+        """Predict user's rating of a movie."""
+
+        #get list of ratings objects for the selected movie
+        other_ratings = movie.ratings
+
+        #build a list of tuples holding the pearson similarity for the user
+        #who made the rating and the rating object itself
+        similarities = [
+            (self.similarity(r.user), r)
+            for r in other_ratings
+        ]
+
+        #sort them by highest similarities at the front of the list
+        similarities.sort(reverse=True)
+
+        #if the similarity score is greater than 0
+        # add the tuple to the similarities list
+        similarities = [(sim, r) for sim, r in similarities
+                        if sim > 0]
+
+        # if no similarities exist, this person has very unique taste, return none
+        if not similarities:
+            return None
+
+        # go through the tuples in similarities and get the sum of all the ratings
+        # after you multiply the rating against their similarity
+        numerator = sum([r.score * sim for sim, r in similarities])
+
+        #go through the tuples in similarities and get the sum of all similarities
+        denominator = sum([sim for sim, r in similarities])
+
+        # divide those to get predictive rating
+        return numerator/denominator
 
 
     def __repr__(self):
