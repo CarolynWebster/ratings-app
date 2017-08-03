@@ -69,9 +69,12 @@ def show_movie_info(movie_id):
     #get the movie obj from the db
     movie = Movie.query.filter(Movie.movie_id == movie_id).first()
 
+    str_date = movie.released_at.strftime('%B %e, %Y')
+
     #if movie exists go to that info page
     if movie:
-        return render_template('movie-info.html', movie=movie)
+        return render_template('movie-info.html', movie=movie,
+                                                  release_date=str_date)
     else:
         flash('No movie exists with that ID')
         return redirect('/movies')

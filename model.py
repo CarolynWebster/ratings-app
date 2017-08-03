@@ -1,6 +1,7 @@
 """Models and database functions for Ratings project."""
 
 from flask_sqlalchemy import SQLAlchemy
+from correlation import pearson
 
 # This is the connection to the PostgreSQL database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
@@ -22,6 +23,39 @@ class User(db.Model):
     password = db.Column(db.String(64), nullable=True)
     age = db.Column(db.Integer, nullable=True)
     zipcode = db.Column(db.String(15), nullable=True)
+
+
+    def find_common_movies(self, other_user):
+        """Finds common movies this user and another user"""
+
+        # make a dict to hold the users ratings
+        this_user_ratings = {}
+
+        #create list to hold shared ratings
+        shared_ratings = []
+
+        #build the dictionary of ratings for this user
+        for rating in self.ratings:
+            this_user_ratings[rating.movie_id] = rating.score
+
+        #look at ratings from another user and if the movie id is in
+        #this users dictionary - add both scores as a tuple to shared rating list
+        for m_id in other_user.ratings:
+            if m_id.movie_id in this_user_ratings:
+                #get this user's score and other user's score
+                user_score = this_user_ratings[m_id.movie_id]
+                other_score = m_id.score
+                #add to the list as a tuple
+                shared_ratings.append((user_score, other_score))
+
+        #return list of shared ratings
+        if shared_ratings:
+            return pearson(shared_ratings)
+
+        else:
+            return 0.0
+
+
 
     def __repr__(self):
         """Provide helpful representation when printed."""
